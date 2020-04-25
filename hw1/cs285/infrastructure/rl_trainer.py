@@ -72,7 +72,7 @@ class RL_Trainer(object):
 
         ## TODO initialize all of the TF variables (that were created by agent, etc.)
         ## HINT: use global_variables_initializer
-        TODO
+        self.sess.run(tf.global_variables_initializer())
 
     def run_training_loop(self, n_iter, collect_policy, eval_policy,
                         initial_expertdata=None, relabel_with_expert=False,
@@ -100,12 +100,13 @@ class RL_Trainer(object):
             else:
                 self.log_video = False
 
+            print("log_video :{}".format(self.log_video))    
             # decide if metrics should be logged
             if itr % self.params['scalar_log_freq'] == 0:
                 self.log_metrics = True
             else:
                 self.log_metrics = False
-
+            print("log_metrics :{}".format(self.log_metrics))    
             # collect trajectories, to be used for training
             training_returns = self.collect_training_trajectories(itr,
                                 initial_expertdata, collect_policy,
@@ -123,8 +124,16 @@ class RL_Trainer(object):
             # train agent (using sampled data from replay buffer)
             self.train_agent() ## TODO implement this function below
 
+
             # log/save
             if self.log_video or self.log_metrics:
+
+                #training_returns = self.collect_training_trajectories(itr,
+                #                initial_expertdata, collect_policy,
+                #                self.params['batch_size']) ## TODO implement this function below
+                #paths, envsteps_this_batch, train_video_paths = training_returns
+                #self.total_envsteps += envsteps_this_batch
+
 
                 # perform logging
                 print('\nBeginning logging procedure...')
@@ -156,12 +165,21 @@ class RL_Trainer(object):
                 # ``` return loaded_paths, 0, None ```
 
                 # collect data, batch_size is the number of transitions you want to collect.
+        if itr==0:
+            with open(load_initial_expertdata, 'rb') as file:
+                loaded_paths = pickle.loads(file.read())
+            #train_video_paths = None
+            #if self.log_video:
+            #    print('\nCollecting train rollouts to be used for saving videos...')
+                ## TODO look in utils and implement sample_n_trajectories
+            #    train_video_paths = sample_n_trajectories(self.env, collect_policy, MAX_NVIDEO, MAX_VIDEO_LEN, True)    
+            return loaded_paths, 0,None #train_video_paths       
 
         # TODO collect data to be used for training
         # HINT1: use sample_trajectories from utils
         # HINT2: you want each of these collected rollouts to be of length self.params['ep_len']
         print("\nCollecting data to be used for training...")
-        paths, envsteps_this_batch = TODO
+        paths, envsteps_this_batch = sample_trajectories(self.env,collect_policy,batch_size*self.params['ep_len'],self.params['ep_len'])
 
         # collect more rollouts with the same policy, to be saved as videos in tensorboard
         # note: here, we collect MAX_NVIDEO rollouts, each of length MAX_VIDEO_LEN
@@ -181,11 +199,15 @@ class RL_Trainer(object):
             # TODO sample some data from the data buffer
             # HINT1: use the agent's sample function
             # HINT2: how much data = self.params['train_batch_size']
-            ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = TODO
+            ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(self.params['train_batch_size'])
 
             # TODO use the sampled data for training
             # HINT: use the agent's train function
             # HINT: print or plot the loss for debugging!
+            self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
+            if train_step % 100 == 0:
+                print('\n Print loss for train steps:{0} is {1}'.format(train_step,self.agent.actor.loss_val))
+
 
     def do_relabel_with_expert(self, expert_policy, paths):
         print("\nRelabelling collected observations with labels from an expert policy...")
@@ -193,6 +215,10 @@ class RL_Trainer(object):
         # TODO relabel collected obsevations (from our policy) with labels from an expert policy
         # HINT: query the policy (using the get_action function) with paths[i]["observation"]
         # and replace paths[i]["action"] with these expert labels
+        i=0
+        while i<len(paths):
+            paths[i]["action"]=expert_policy.get_action(paths[i]["observation"])
+            i+=1
 
         return paths
 
