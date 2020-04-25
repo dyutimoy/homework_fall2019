@@ -2,7 +2,8 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-
+import sys
+sys.path.append('/content/homework_fall2019/hw1')
 from cs285.infrastructure.rl_trainer import RL_Trainer
 from cs285.agents.bc_agent import BCAgent
 from cs285.policies.loaded_gaussian_policy import Loaded_Gaussian_Policy
