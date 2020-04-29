@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 import gym
 import os
+import pybullet, pybullet_envs
 
 from cs285.infrastructure.utils import *
 from cs285.infrastructure.tf_utils import create_tf_session
