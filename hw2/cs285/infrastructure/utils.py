@@ -7,7 +7,7 @@ import time
 def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('rgb_array')):
 
     # initialize env for the beginning of a new rollout
-    ob = TODO # TODO: GETTHIS from HW1
+    ob = env.reset() # TODO: GETTHIS from HW1
 
     # init vars
     obs, acs, rewards, next_obs, terminals, image_obs = [], [], [], [], [], []
@@ -30,7 +30,7 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # use the most recent ob to decide what to do
         obs.append(ob)
-        ac = TODO # TODO: GETTHIS from HW1
+        ac = policy.get_action(ob) # TODO: GETTHIS from HW1
         ac = ac[0]
         acs.append(ac)
 
@@ -44,7 +44,7 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # End the rollout if the rollout ended 
         # Note that the rollout can end due to done, or due to max_path_length
-        rollout_done = TODO # TODO: GETTHIS from HW1
+        rollout_done =   1 if (done or steps >= max_path_length) else 0 # TODO: GETTHIS from HW1
         terminals.append(rollout_done)
         
         if rollout_done: 
@@ -55,12 +55,38 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, render=False, render_mode=('rgb_array')):
 
     # TODO: GETTHIS from HW1
+    """
+        Collect rollouts until we have collected min_timesteps_per_batch steps.
+
+        TODO implement this function
+        Hint1: use sample_trajectory to get each path (i.e. rollout) that goes into paths
+        Hint2: use get_pathlength to count the timesteps collected in each path
+    """
+    timesteps_this_batch = 0
+    paths = []
+    while timesteps_this_batch < min_timesteps_per_batch:
+        curr_path=sample_trajectory(env,policy,max_path_length)
+        paths+=[curr_path]
+        timesteps_this_batch=timesteps_this_batch+get_pathlength(curr_path)
+        print(timesteps_this_batch)    
 
     return paths, timesteps_this_batch
 
 def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False, render_mode=('rgb_array')):
     
     # TODO: GETTHIS from HW1
+    """
+        Collect ntraj rollouts.
+
+        TODO implement this function
+        Hint1: use sample_trajectory to get each path (i.e. rollout) that goes into paths
+    """
+    paths = []
+
+    trajs=0
+    while trajs<ntraj:
+        paths+=[sample_trajectory(env,policy,max_path_length)]
+        trajs=trajs+1
 
     return paths
 
