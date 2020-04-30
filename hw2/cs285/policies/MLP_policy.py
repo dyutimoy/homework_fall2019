@@ -204,7 +204,7 @@ class MLPPolicyPG(MLPPolicy):
         assert(self.training, 'Policy must be created with training=True in order to perform training updates...')
 
         _, loss = self.sess.run([self.train_op, self.loss], feed_dict={self.observations_pl: observations, self.actions_pl: acs_na, self.adv_n: adv_n})
-
+        self.loss_val=loss
         if self.nn_baseline:
             targets_n = (qvals - np.mean(qvals))/(np.std(qvals)+1e-8)
             # TODO: update the nn baseline with the targets_n

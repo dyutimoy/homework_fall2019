@@ -1,6 +1,8 @@
 import os
 import time
 
+import sys
+sys.path.append('/content/homework_fall2019/hw2')
 from cs285.infrastructure.rl_trainer import RL_Trainer
 from cs285.agents.pg_agent import PGAgent
 

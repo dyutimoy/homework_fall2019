@@ -70,7 +70,7 @@ class PGAgent(BaseAgent):
         # step 3:
         # TODO: pass the calculated values above into the actor/policy's update, 
         # which will perform the actual PG update step
-        loss = self.actor.update(obs, acs, qvals=q_values, adv_n=advantage_value)
+        loss = self.actor.update(obs, acs, qvals=q_values, adv_n=advantage_values)
         return loss
 
     def calculate_q_vals(self, rews_list):
@@ -97,7 +97,7 @@ class PGAgent(BaseAgent):
             # HINT1: value of each point (t) = total discounted reward summed over the entire trajectory (from 0 to T-1)
                 # In other words, q(s_t, a_t) = sum_{t'=0}^{T-1} gamma^t' r_{t'}
             # Hint3: see the helper functions at the bottom of this file
-            q_values = np.concatenate([_discounted_return(r) for r in rews_list])
+            q_values = np.concatenate([self._discounted_return(r) for r in rews_list])
 
         # Case 2: reward-to-go PG 
         else:
@@ -106,7 +106,7 @@ class PGAgent(BaseAgent):
             # HINT1: value of each point (t) = total discounted reward summed over the remainder of that trajectory (from t to T-1)
                 # In other words, q(s_t, a_t) = sum_{t'=t}^{T-1} gamma^(t'-t) * r_{t'}
             # Hint3: see the helper functions at the bottom of this file
-            q_values = np.concatenate([_discounted_cumsum(r) for r in rews_list])
+            q_values = np.concatenate([self._discounted_cumsum(r) for r in rews_list])
 
         return q_values
 

@@ -158,6 +158,7 @@ class RL_Trainer(object):
                 # ``` return loaded_paths, 0, None ```
 
                 # collect data, batch_size is the number of transitions you want to collect.
+        """
         if itr==0:
             with open(load_initial_expertdata, 'rb') as file:
                 loaded_paths = pickle.loads(file.read())
@@ -167,7 +168,7 @@ class RL_Trainer(object):
                 ## TODO look in utils and implement sample_n_trajectories
             #    train_video_paths = sample_n_trajectories(self.env, collect_policy, MAX_NVIDEO, MAX_VIDEO_LEN, True)    
             return loaded_paths, 0,None #train_video_paths       
-
+        """
         # TODO collect data to be used for training
         # HINT1: use sample_trajectories from utils
         # HINT2: you want each of these collected rollouts to be of length self.params['ep_len']

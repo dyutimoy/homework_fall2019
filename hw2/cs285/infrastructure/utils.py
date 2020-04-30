@@ -31,7 +31,8 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
         # use the most recent ob to decide what to do
         obs.append(ob)
         ac = policy.get_action(ob) # TODO: GETTHIS from HW1
-        ac = ac[0]
+        #print(ac)
+        ac = np.asscalar(ac[0])
         acs.append(ac)
 
         # take that action and record results
@@ -68,7 +69,7 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
         curr_path=sample_trajectory(env,policy,max_path_length)
         paths+=[curr_path]
         timesteps_this_batch=timesteps_this_batch+get_pathlength(curr_path)
-        print(timesteps_this_batch)    
+        #print(timesteps_this_batch)    
 
     return paths, timesteps_this_batch
 
