@@ -84,7 +84,7 @@ class MLPPolicy(BasePolicy):
         else:
             #log probability under a multivariate gaussian
             mean, logstd = self.parameters
-            self.logprob_n = tf.distributions.MultivariateNormalDiag(
+            self.logprob_n = tfp.distributions.MultivariateNormalDiag(
                 loc=mean, scale_diag=tf.exp(logstd)).log_prob(self.actions_pl)
 
     def build_baseline_forward_pass(self):
