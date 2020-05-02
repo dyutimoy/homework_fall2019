@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from IPython import display as ipythondisplay
 
 ############################################
 ############################################
@@ -16,14 +17,23 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # render image of the simulated env
         if render:
+            print("render")
+            from pyvirtualdisplay import Display
+            display = Display(visible=0, size=(1400, 900))
+            display.start()
             if 'rgb_array' in render_mode:
                 if hasattr(env, 'sim'):
                     if 'track' in env.env.model.camera_names:
                         image_obs.append(env.sim.render(camera_name='track', height=500, width=500)[::-1])
+                        print("track")
                     else:
                         image_obs.append(env.sim.render(height=500, width=500)[::-1])
+                        print("sdds")
                 else:
                     image_obs.append(env.render(mode=render_mode))
+                    print("sdddss")
+                print("what")  
+                ipythondisplay.clear_output(wait=True)  
             if 'human' in render_mode:
                 env.render(mode=render_mode)
                 time.sleep(env.model.opt.timestep)
@@ -32,11 +42,11 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
         obs.append(ob)
         ac = policy.get_action(ob) # TODO: GETTHIS from HW1
         #print(ac)
-        ac = np.asscalar(ac[0])
-        acs.append(ac)
+      
+        acs.append(ac[0].flatten())
 
         # take that action and record results
-        ob, rew, done, _ = env.step(ac)
+        ob, rew, done, _ = env.step(ac[0])
 
         # record result of taking that action
         steps += 1
@@ -50,7 +60,9 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
         
         if rollout_done: 
             break
-
+        #print(ob)
+        #print("******")
+        #print(ac[0].flatten())
     return Path(obs, image_obs, acs, rewards, next_obs, terminals)
 
 def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, render=False, render_mode=('rgb_array')):
@@ -66,7 +78,7 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
     timesteps_this_batch = 0
     paths = []
     while timesteps_this_batch < min_timesteps_per_batch:
-        curr_path=sample_trajectory(env,policy,max_path_length)
+        curr_path=sample_trajectory(env,policy,max_path_length, render, render_mode)
         paths+=[curr_path]
         timesteps_this_batch=timesteps_this_batch+get_pathlength(curr_path)
         #print(timesteps_this_batch)    
@@ -86,7 +98,7 @@ def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False, ren
 
     trajs=0
     while trajs<ntraj:
-        paths+=[sample_trajectory(env,policy,max_path_length)]
+        paths+=[sample_trajectory(env,policy,max_path_length,render,render_mode)]
         trajs=trajs+1
 
     return paths
@@ -121,6 +133,7 @@ def convert_listofrollouts(paths):
     terminals = np.concatenate([path["terminal"] for path in paths])
     concatenated_rewards = np.concatenate([path["reward"] for path in paths])
     unconcatenated_rewards = [path["reward"] for path in paths]
+    #print(unconcatenated_rewards)
     return observations, actions, next_observations, terminals, concatenated_rewards, unconcatenated_rewards
 
 ############################################
