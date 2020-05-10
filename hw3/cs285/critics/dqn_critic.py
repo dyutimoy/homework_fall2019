@@ -37,8 +37,8 @@ class DQNCritic(BaseCritic):
     def build(self,ob_no, ac_na, re_n, next_ob_no, terminal_n, lr):
 
         #####################
-        self.obs_t_ph=ob_no
-        self.act_t_ph=ac_na
+        self.obs_t_ph=tf.Variable(ob_no)
+        self.act_t_ph=tf.Variable(ac_na
         self.rew_t_ph=re_n
         self.obs_tp1_ph=next_ob_no
         self.done_mask_ph=terminal_n
@@ -47,8 +47,10 @@ class DQNCritic(BaseCritic):
             self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
             #pass
         self.q_t_values =self.q_t_values_model.predict(self.obs_t_ph)
-        q_t = tf.reduce_sum(self.q_t_values * tf.one_hot(self.act_t_ph, self.ac_dim), axis=1)
-
+        self.q_t_values=tf.Variable(self.q_t_values)
+        print(self.q_t_values)
+        self.q_t = tf.reduce_sum(self.q_t_values * tf.one_hot(self.act_t_ph, self.ac_dim), axis=1)
+        self.q_t=tf.Variable(self.q_t)
         #####################
 
         # target q values, created with the placeholder that holds NEXT obs (i.e., t+1)
@@ -81,15 +83,16 @@ class DQNCritic(BaseCritic):
         # TODO compute the Bellman error (i.e. TD error between q_t and target_q_t)
         # Note that this scalar-valued tensor later gets passed into the optimizer, to be minimized
         # HINT: use reduce mean of huber_loss (from infrastructure/dqn_utils.py) instead of squared error
-        self.total_error= tf.reduce_mean(huber_loss(q_t-target_q_t))
-        print(self.total_error)
+        self.total_error=lambda: tf.reduce_mean(huber_loss(self.q_t-target_q_t))
+        
+        #print(self.total_error)
         #####################
 
         # TODO these variables should all of the 
         # variables of the Q-function network and target network, respectively
         # HINT1: see the "scope" under which the variables were constructed in the lines at the top of this function
         # HINT2: use tf.get_collection to look for all variables under a certain scope
-        q_func_vars = lambda: q_t_values_model.trainable_weights
+        q_func_vars =lambda: self.q_t_values_model.trainable_weights
         #target_q_func_vars = TODO
 
         #####################
@@ -98,13 +101,13 @@ class DQNCritic(BaseCritic):
         self.learning_rate = lr
         optimizer = self.optimizer_spec.constructor(learning_rate=self.learning_rate, **self.optimizer_spec.kwargs)
         self.train_fn = minimize_and_clip(optimizer, self.total_error,
-                                          var_list=q_func_vars, clip_val=self.grad_norm_clipping)
+                                          var_list=self.obs_t_ph, clip_val=self.grad_norm_clipping)
 
         # update_target_fn will be called periodically to copy Q network to target Q network
 
     def update_model(self):    
         
-        self.q_t_values.set_weights(self.target_q_func_model.get_weights())
+        self.q_t_values_model.set_weights(self.target_q_func_model.get_weights())
     """
     def define_placeholders(self):
         # set up placeholders

@@ -36,7 +36,7 @@ class DQNAgent(object):
     def add_to_replay_buffer(self, paths):
         pass
 
-    #@tf.function    
+    #@tf.function()    
     def step_env(self):
 
         """
@@ -104,7 +104,7 @@ class DQNAgent(object):
         else:
             return [],[],[],[],[]
 
-    #@tf.function
+    #@tf.function()
     def train(self, ob_no, ac_na, re_n, next_ob_no, terminal_n):
 
         """

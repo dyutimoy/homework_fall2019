@@ -15,7 +15,7 @@ OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs", "lr_schedu
 def get_env_kwargs(env_name):
     if env_name == 'PongNoFrameskip-v4':
         kwargs = {
-            'learning_starts': 5000,
+            'learning_starts': 500,
             'target_update_freq': 10000,
             'replay_buffer_size': int(1e6),
             'num_timesteps': int(2e8),
@@ -277,6 +277,7 @@ def compute_exponential_averages(variables, decay):
     apply_op = averager.apply(variables)
     return [averager.average(v) for v in variables], apply_op
 
+@tf.function()
 def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
     """Minimized `objective` using `optimizer` w.r.t. variables in
     `var_list` while ensure the norm of the gradients for each
@@ -291,11 +292,14 @@ def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
     """
     with tf.GradientTape() as tape:
         loss =objective
-        vars = var_list
-    grads = tape.gradient(loss, vars)
-
-    processed_grads=[tf.clip_by_norm(g, clip_val) fot g in grads]        
-    return optimizer.apply_gradients(zip(processed_grads),vars)
+    
+    var_val = var_list
+    #print(var_val)
+    print(loss)
+    grads = tape.gradient(loss, var_val)
+    print(grads)
+    #processed_grads=[tf.clip_by_norm(g, clip_val) for g in grads]        
+    return optimizer.apply_gradients(zip(grads,var_val))
 
 def initialize_interdependent_variables(session, vars_list, feed_dict):
     """Initialize a list of variables one at a time, which is useful if
