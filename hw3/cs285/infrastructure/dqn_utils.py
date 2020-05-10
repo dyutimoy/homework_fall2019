@@ -15,7 +15,7 @@ OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs", "lr_schedu
 def get_env_kwargs(env_name):
     if env_name == 'PongNoFrameskip-v4':
         kwargs = {
-            'learning_starts': 50000,
+            'learning_starts': 5000,
             'target_update_freq': 10000,
             'replay_buffer_size': int(1e6),
             'num_timesteps': int(2e8),
@@ -67,7 +67,7 @@ def lander_model(obs, num_actions, scope, reuse=False):
         return out
 
 
-def atari_model(img_input, num_actions, scope, reuse=False):
+def atari_model(img_input, num_actions,):
     """
     with tf.variable_scope(scope, reuse=reuse):
         out = tf.cast(img_input, tf.float32) / 255.0
@@ -83,14 +83,16 @@ def atari_model(img_input, num_actions, scope, reuse=False):
 
         return out
     """
+    print(tf.shape(img_input)[1:])
     atari_model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(32, (8,8),(4,4), activation='relu', input_shape=tf.shape(img_input)),
+            tf.keras.layers.Conv2D(32, (8,8),(4,4), activation='relu', input_shape=tf.shape(img_input)[1:]),
             tf.keras.layers.Conv2D(64, (4,4),2, activation='relu'),
             tf.keras.layers.Conv2D(64, (3,3),1, activation='relu'),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(512, activation='relu'),
             tf.keras.layers.Dense(num_actions, activation=None)
             ])
+    atari_model.summary()        
     return atari_model
 
 
@@ -280,11 +282,20 @@ def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
     `var_list` while ensure the norm of the gradients for each
     variable is clipped to `clip_val`
     """
+    """
     gradients = optimizer.compute_gradients(objective, var_list=var_list)
     for i, (grad, var) in enumerate(gradients):
         if grad is not None:
             gradients[i] = (tf.clip_by_norm(grad, clip_val), var)
     return optimizer.apply_gradients(gradients)
+    """
+    with tf.GradientTape() as tape:
+        loss =objective
+        vars = var_list
+    grads = tape.gradient(loss, vars)
+
+    processed_grads=[tf.clip_by_norm(g, clip_val) fot g in grads]        
+    return optimizer.apply_gradients(zip(processed_grads),vars)
 
 def initialize_interdependent_variables(session, vars_list, feed_dict):
     """Initialize a list of variables one at a time, which is useful if

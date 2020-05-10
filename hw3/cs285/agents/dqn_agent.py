@@ -36,7 +36,7 @@ class DQNAgent(object):
     def add_to_replay_buffer(self, paths):
         pass
 
-    @tf.function    
+    #@tf.function    
     def step_env(self):
 
         """
@@ -47,6 +47,7 @@ class DQNAgent(object):
 
             Note that self.last_obs must always point to the new latest observation.
         """
+        print("\n step")
 
         # TODO store the latest observation into the replay buffer
         # HINT: see replay buffer's function store_frame
@@ -60,6 +61,7 @@ class DQNAgent(object):
         rv =np.random.random()
         perform_random_action = (rv<eps) or (self.t <self.learning_starts)
 
+        print(perform_random_action)
         if perform_random_action:
             action = self.env.action_space.sample()
         else:
@@ -76,6 +78,7 @@ class DQNAgent(object):
             enc_last_obs = enc_last_obs[None, :]
 
             # TODO query the policy with enc_last_obs to select action
+            print("build q")
             self.actor.critic.build_q_t_val(enc_last_obs)
             action = self.actor.get_action(enc_last_obs)
             action = action[0]
@@ -84,7 +87,7 @@ class DQNAgent(object):
         # HINT1: remember that self.last_obs must always point to the newest/latest observation
         # HINT2: remember the following useful function that you've seen before:
             #obs, reward, done, info = env.step(action)
-        self.last_obs, reward, done, info =self.env.step(atcion)
+        self.last_obs, reward, done, info =self.env.step(action)
 
         # TODO store the result of taking this action into the replay buffer
         # HINT1: see replay buffer's store_effect function
@@ -101,7 +104,7 @@ class DQNAgent(object):
         else:
             return [],[],[],[],[]
 
-    @tf.function
+    #@tf.function
     def train(self, ob_no, ac_na, re_n, next_ob_no, terminal_n):
 
         """
@@ -110,6 +113,9 @@ class DQNAgent(object):
         """
 
         loss = 0.0
+        #print(self.replay_buffer.can_sample(self.batch_size))
+        print("\nself t")
+        print(self.t)
         if (self.t > self.learning_starts and \
                 self.t % self.learning_freq == 0 and \
                 self.replay_buffer.can_sample(self.batch_size)):
@@ -136,6 +142,6 @@ class DQNAgent(object):
                 self.critic.update_model()
 
             self.num_param_updates += 1
-
+            loss=self.critic.total_error
         self.t += 1
-        return self.critic.total_error
+        return loss

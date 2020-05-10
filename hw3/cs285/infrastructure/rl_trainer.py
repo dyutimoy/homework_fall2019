@@ -36,7 +36,7 @@ class RL_Trainer(object):
 
         # Set random seeds
         seed = self.params['seed']
-        tf.set_random_seed(seed)
+        tf.random.set_seed(seed)
         np.random.seed(seed)
 
         #############
@@ -131,6 +131,7 @@ class RL_Trainer(object):
             # collect trajectories, to be used for training
             if isinstance(self.agent, DQNAgent):
                 # only perform an env step and add to replay buffer for DQN
+                #print("yes")
                 self.agent.step_env()
                 envsteps_this_batch = 1
                 train_video_paths = None
@@ -149,7 +150,8 @@ class RL_Trainer(object):
 
             # train agent (using sampled data from replay buffer)
             loss = self.train_agent()
-
+            #print(itr)
+            print(loss)
             # log/save
             if self.logvideo or self.logmetrics:
                 # perform logging
@@ -224,14 +226,17 @@ class RL_Trainer(object):
             # HINT1: use the agent's sample function
             # HINT2: how much data = self.params['train_batch_size']
             ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(self.params['train_batch_size'])
-            print("obs shape:{0}".format(ob_batch.shape))
-            print("action shape:{0}".format(ac_batch.shape))
+            #print("obs shape:{0}".format(ob_batch.shape))
+            #print("action shape:{0}".format(ac_batch.shape))
             # TODO use the sampled data for training
             # HINT: use the agent's train function
             # HINT: print or plot the loss for debugging!
-            self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
-            if train_step % 100 == 0:
-                print('\n Print loss for train steps:{0} is {1}'.format(train_step,self.agent.actor.loss_val))    
+            #print("\ntraining")
+            #print(train_step)
+            loss= self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
+            #if train_step % 100 == 0:
+            #print('\n Print loss for train steps:{0} is {1}'.format(train_step,self.agent.actor.loss_val))    
+        return loss
 
     def do_relabel_with_expert(self, expert_policy, paths):
         # TODO: GETTHIS from HW1 (although you don't actually need it for this homework)

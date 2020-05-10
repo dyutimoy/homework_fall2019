@@ -2,8 +2,8 @@ import tensorflow as tf
 
 class ArgMaxPolicy(object):
 
-    def __init__(self, sess, critic):
-        self.sess = sess
+    def __init__(self, critic):
+        
         self.critic = critic
 
         # TODO: Define what action this policy should return
@@ -19,6 +19,5 @@ class ArgMaxPolicy(object):
             observation = obs
         else:
             observation = obs[None]
-            
-        self.critic.build_q_t_val(obs)    
+        self.critic.build_q_t_val(obs)     
         return tf.argmax(self.critic.q_t_values, axis=1)

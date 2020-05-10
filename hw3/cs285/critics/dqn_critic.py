@@ -22,12 +22,15 @@ class DQNCritic(BaseCritic):
 
         self.optimizer_spec = optimizer_spec
         self.q_func=hparams['q_func']
+        self.q_t_values_model=None
+        self.target_q_func_model=None
         #self.define_placeholders()
         #self._build(hparams['q_func'])
 
     def build_q_t_val(self,obs):
         self.obs_t_ph=obs
-        self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
+        if self.q_t_values_model is None:
+          self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
         self.q_t_values =self.q_t_values_model.predict(self.obs_t_ph)
 
     
@@ -41,17 +44,18 @@ class DQNCritic(BaseCritic):
         self.done_mask_ph=terminal_n
         # q values, created with the placeholder that holds CURRENT obs (i.e., t)
         if self.q_t_values_model is None:
-            #self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
-            pass
+            self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
+            #pass
         self.q_t_values =self.q_t_values_model.predict(self.obs_t_ph)
-        self.q_t = tf.reduce_sum(self.q_t_values * tf.one_hot(self.act_t_ph, self.ac_dim), axis=1)
+        q_t = tf.reduce_sum(self.q_t_values * tf.one_hot(self.act_t_ph, self.ac_dim), axis=1)
 
         #####################
 
         # target q values, created with the placeholder that holds NEXT obs (i.e., t+1)
-        
-        self.target_q_func_model=self.q_func(self.obs_tp1_ph, self.ac_dim, scope='target_q_func', reuse=False)
-        q_tp1_values = self.target_q_func_model(self.obs_tp1_ph,, self.ac_dim)
+ 
+        if self.target_q_func_model is None:
+            self.target_q_func_model=self.q_func(self.obs_tp1_ph, self.ac_dim)
+        q_tp1_values = self.target_q_func_model(self.obs_tp1_ph, self.ac_dim)
         if self.double_q:
             # You must fill this part for Q2 of the Q-learning potion of the homework.
             # In double Q-learning, the best action is selected using the Q-network that
@@ -78,14 +82,14 @@ class DQNCritic(BaseCritic):
         # Note that this scalar-valued tensor later gets passed into the optimizer, to be minimized
         # HINT: use reduce mean of huber_loss (from infrastructure/dqn_utils.py) instead of squared error
         self.total_error= tf.reduce_mean(huber_loss(q_t-target_q_t))
-
+        print(self.total_error)
         #####################
 
         # TODO these variables should all of the 
         # variables of the Q-function network and target network, respectively
         # HINT1: see the "scope" under which the variables were constructed in the lines at the top of this function
         # HINT2: use tf.get_collection to look for all variables under a certain scope
-        q_func_vars = lambda: model.trainable_weights
+        q_func_vars = lambda: q_t_values_model.trainable_weights
         #target_q_func_vars = TODO
 
         #####################
@@ -98,7 +102,7 @@ class DQNCritic(BaseCritic):
 
         # update_target_fn will be called periodically to copy Q network to target Q network
 
-    def update_model(self)    
+    def update_model(self):    
         
         self.q_t_values.set_weights(self.target_q_func_model.get_weights())
     """
