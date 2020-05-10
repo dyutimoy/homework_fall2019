@@ -6,7 +6,7 @@ from collections import namedtuple
 import gym
 import numpy as np
 import tensorflow as tf
-import tensorflow.contrib.layers as layers
+
 
 from cs285.infrastructure.atari_wrappers import wrap_deepmind
 
@@ -68,6 +68,7 @@ def lander_model(obs, num_actions, scope, reuse=False):
 
 
 def atari_model(img_input, num_actions, scope, reuse=False):
+    """
     with tf.variable_scope(scope, reuse=reuse):
         out = tf.cast(img_input, tf.float32) / 255.0
         with tf.variable_scope("convnet"):
@@ -81,6 +82,17 @@ def atari_model(img_input, num_actions, scope, reuse=False):
             out = layers.fully_connected(out, num_outputs=num_actions, activation_fn=None)
 
         return out
+    """
+    atari_model = tf.keras.models.Sequential([
+            tf.keras.layers.Conv2D(32, (8,8),(4,4), activation='relu', input_shape=tf.shape(img_input)),
+            tf.keras.layers.Conv2D(64, (4,4),2, activation='relu'),
+            tf.keras.layers.Conv2D(64, (3,3),1, activation='relu'),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(512, activation='relu'),
+            tf.keras.layers.Dense(num_actions, activation=None)
+            ])
+    return atari_model
+
 
 def atari_exploration_schedule(num_timesteps):
     return PiecewiseSchedule(
@@ -113,7 +125,7 @@ def atari_optimizer(num_timesteps):
         outside_value=5e-5 * lr_multiplier)
 
     return OptimizerSpec(
-        constructor=tf.train.AdamOptimizer,
+        constructor=tf.keras.optimizers.Adam,
         kwargs=dict(epsilon=1e-4),
         lr_schedule=lr_schedule
     )

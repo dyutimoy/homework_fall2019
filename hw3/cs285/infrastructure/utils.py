@@ -7,16 +7,99 @@ import time
 def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('rgb_array')):
 
     # TODO: GETTHIS from HW2
+    # initialize env for the beginning of a new rollout
+    ob = env.reset() # TODO: GETTHIS from HW1
+
+    # init vars
+    obs, acs, rewards, next_obs, terminals, image_obs = [], [], [], [], [], []
+    steps = 0
+    while True:
+
+        # render image of the simulated env
+        if render:
+            print("render")
+            from pyvirtualdisplay import Display
+            display = Display(visible=0, size=(1400, 900))
+            display.start()
+            if 'rgb_array' in render_mode:
+                if hasattr(env, 'sim'):
+                    if 'track' in env.env.model.camera_names:
+                        image_obs.append(env.sim.render(camera_name='track', height=500, width=500)[::-1])
+                        print("track")
+                    else:
+                        image_obs.append(env.sim.render(height=500, width=500)[::-1])
+                        print("sdds")
+                else:
+                    image_obs.append(env.render(mode=render_mode))
+                    print("sdddss")
+                print("what")  
+                ipythondisplay.clear_output(wait=True)  
+            if 'human' in render_mode:
+                env.render(mode=render_mode)
+                time.sleep(env.model.opt.timestep)
+
+        # use the most recent ob to decide what to do
+        obs.append(ob)
+        ac = policy.get_action(ob) # TODO: GETTHIS from HW1
+        #print(ac)
+      
+        acs.append(ac[0].flatten())
+
+        # take that action and record results
+        ob, rew, done, _ = env.step(ac[0])
+
+        # record result of taking that action
+        steps += 1
+        next_obs.append(ob)
+        rewards.append(rew)
+
+        # End the rollout if the rollout ended 
+        # Note that the rollout can end due to done, or due to max_path_length
+        rollout_done =   1 if (done or steps >= max_path_length) else 0 # TODO: GETTHIS from HW1
+        terminals.append(rollout_done)
+        
+        if rollout_done: 
+            break
+        #print(ob)
+        #print("******")
+        #print(ac[0].flatten())
+    return Path(obs, image_obs, acs, rewards, next_obs, terminals)
 
 def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, render=False, render_mode=('rgb_array')):
 
     # TODO: GETTHIS from HW1 or HW2
+    """
+        Collect rollouts until we have collected min_timesteps_per_batch steps.
+
+        TODO implement this function
+        Hint1: use sample_trajectory to get each path (i.e. rollout) that goes into paths
+        Hint2: use get_pathlength to count the timesteps collected in each path
+    """
+    timesteps_this_batch = 0
+    paths = []
+    while timesteps_this_batch < min_timesteps_per_batch:
+        curr_path=sample_trajectory(env,policy,max_path_length, render, render_mode)
+        paths+=[curr_path]
+        timesteps_this_batch=timesteps_this_batch+get_pathlength(curr_path)
 
     return paths, timesteps_this_batch
 
 def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False, render_mode=('rgb_array')):
     
     # TODO: GETTHIS from HW1 or HW2
+    """
+        Collect ntraj rollouts.
+
+        TODO implement this function
+        Hint1: use sample_trajectory to get each path (i.e. rollout) that goes into paths
+    """
+    paths = []
+
+    trajs=0
+    while trajs<ntraj:
+        paths+=[sample_trajectory(env,policy,max_path_length,render,render_mode)]
+        trajs=trajs+1
+
 
     return paths
 

@@ -36,7 +36,7 @@ def build_mlp(input_placeholder, output_size, scope, n_layers, size, activation=
 ############################################
 ############################################
 
-
+"""
 def create_tf_session(use_gpu, gpu_frac=0.6, allow_gpu_growth=True, which_gpu=0):
     if use_gpu:
         # gpu options
@@ -59,7 +59,7 @@ def create_tf_session(use_gpu, gpu_frac=0.6, allow_gpu_growth=True, which_gpu=0)
     # use config to create TF session
     sess = tf.Session(config=config)
     return sess
-
+"""
 def lrelu(x, leak=0.2):
     f1 = 0.5 * (1 + leak)
     f2 = 0.5 * (1 - leak)
