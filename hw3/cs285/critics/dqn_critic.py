@@ -1,6 +1,8 @@
 from .base_critic import BaseCritic
 import tensorflow as tf
-from cs285.infrastructure.dqn_utils import minimize_and_clip, huber_loss
+from cs285.infrastructure.dqn_utils import minimize_and_clip, huber_loss,PiecewiseSchedule
+
+
 
 class DQNCritic(BaseCritic):
 
@@ -19,36 +21,48 @@ class DQNCritic(BaseCritic):
         self.double_q = hparams['double_q']
         self.grad_norm_clipping = hparams['grad_norm_clipping']
         self.gamma = hparams['gamma']
-
+        self.num_timesteps=hparams['num_timesteps']
         self.optimizer_spec = optimizer_spec
         self.q_func=hparams['q_func']
         self.q_t_values_model=None
         self.target_q_func_model=None
+        #self.optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, epsilon=1e-04)
         #self.define_placeholders()
         #self._build(hparams['q_func'])
 
-    @tf.function
+    def build_model(self,obs):
+        input_shape=tf.shape(obs)[1:]
+        tf.print(input_shape)
+        
+        if self.q_t_values_model is None:
+                self.q_t_values_model= self.q_func(input_shape, self.ac_dim)
+        if self.target_q_func_model is None:
+                self.target_q_func_model=self.q_func(input_shape, self.ac_dim)  
+
+
+    
     def build_q_t_val(self,obs):
         self.obs_t_ph=tf.convert_to_tensor(obs)
         if self.q_t_values_model is None:
           self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
         self.q_t_values =self.q_t_values_model(self.obs_t_ph)
 
-    @tf.function
-    def build(self,ob_no, ac_na, re_n, next_ob_no, terminal_n, lr):
+    
+    def train_one_step(self,ob_no, ac_na, re_n, next_ob_no, terminal_n,lr):
 
         #####################
         self.obs_t_ph=tf.convert_to_tensor(ob_no)
-        self.act_t_ph=tf.constant(ac_na)
-        self.rew_t_ph=tf.constant(re_n)
+        self.act_t_ph=tf.convert_to_tensor(ac_na)
+        self.rew_t_ph=tf.convert_to_tensor(re_n)
         self.obs_tp1_ph=tf.convert_to_tensor(next_ob_no)
-        self.done_mask_ph=tf.constant(terminal_n)
+        self.done_mask_ph=tf.convert_to_tensor(terminal_n)
         # q values, created with the placeholder that holds CURRENT obs (i.e., t)
+        
+                
         with tf.GradientTape() as tape:
 
             tape.watch(self.obs_t_ph)
-            if self.q_t_values_model is None:
-                self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
+            
                 #pass
             self.q_t_values =self.q_t_values_model(self.obs_t_ph)
             #self.q_t_values=tf.Variable(self.q_t_values)
@@ -60,9 +74,8 @@ class DQNCritic(BaseCritic):
 
             # target q values, created with the placeholder that holds NEXT obs (i.e., t+1)
      
-            if self.target_q_func_model is None:
-                self.target_q_func_model=self.q_func(self.obs_tp1_ph, self.ac_dim)
-            q_tp1_values = self.target_q_func_model(self.obs_tp1_ph, self.ac_dim)
+            
+            q_tp1_values = self.target_q_func_model(self.obs_tp1_ph)
             if self.double_q:
                 # You must fill this part for Q2 of the Q-learning potion of the homework.
                 # In double Q-learning, the best action is selected using the Q-network that
@@ -89,7 +102,7 @@ class DQNCritic(BaseCritic):
             # Note that this scalar-valued tensor later gets passed into the optimizer, to be minimized
             # HINT: use reduce mean of huber_loss (from infrastructure/dqn_utils.py) instead of squared error
             self.total_error= tf.reduce_mean(huber_loss(self.q_t-target_q_t))
-            tf.print(self.total_error)
+            #tf.print(self.total_error)
             #print(self.total_error)
             #####################
 
@@ -101,14 +114,15 @@ class DQNCritic(BaseCritic):
             #target_q_func_vars = TODO
 
         #####################
-        gradients=tape.gradient(self.total_error,self.q_t_values_model.trainable_weights)
-        tf.print("trainable_weights",self.q_t_values_model.trainable_weights)
+        #q_weights=self.q_t_values_model.trainable_weights
+        gradients=tape.gradient(self.total_error,self.q_t_values_model.trainable_variables)
+        #tf.print("trainable_weights",q_weights)
         # train_fn will be called in order to train the critic (by minimizing the TD error)
         self.learning_rate = lr
-        optimizer = self.optimizer_spec.constructor(learning_rate=self.learning_rate, **self.optimizer_spec.kwargs)
         #minimize_and_clip(optimizer, gradients, clip_val=self.grad_norm_clipping)
-        #processed_grads=[tf.clip_by_norm(g, clip_val) for g in grads]        
-        optimizer.apply_gradients(zip(gradients,self.q_t_values_model.trainable_weights))
+        #processed_grads=[tf.clip_by_norm(g, clip_val) for g in grads]  
+        optimizer = self.optimizer_spec.constructor(learning_rate=self.learning_rate, **self.optimizer_spec.kwargs)      
+        optimizer.apply_gradients(zip(gradients,self.q_t_values_model.trainable_variables))
 
         # update_target_fn will be called periodically to copy Q network to target Q network
 
@@ -139,3 +153,4 @@ class DQNCritic(BaseCritic):
     """
     def update(self, ob_no, next_ob_no, re_n, terminal_n):
         raise NotImplementedError
+

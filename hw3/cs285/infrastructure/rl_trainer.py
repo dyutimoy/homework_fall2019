@@ -128,6 +128,12 @@ class RL_Trainer(object):
             else:
                 self.logmetrics = False
 
+            
+            if itr==self.params['agent_params']['learning_starts']:
+                ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(self.params['train_batch_size'])
+                self.agent.critic.build_model(ob_batch)    
+                #self.agent.critic.optimizer_lr(itr)
+
             # collect trajectories, to be used for training
             if isinstance(self.agent, DQNAgent):
                 # only perform an env step and add to replay buffer for DQN

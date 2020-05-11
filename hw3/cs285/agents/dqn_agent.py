@@ -130,7 +130,10 @@ class DQNAgent(object):
             # train the critic as well as get the resulting total_error
             #tensors_to_run = TODO
             #loss, _ = self.sess.run(tensors_to_run, feed_dict=feed_dict)
-            self.critic.build(ob_no, ac_na, re_n, next_ob_no, terminal_n,self.optimizer_spec.lr_schedule.value(self.t))
+            #optimizer=self.critic.optimizer_lr(self.t)
+            self.critic.train_one_step(ob_no, ac_na, re_n, next_ob_no, terminal_n,self.optimizer_spec.lr_schedule.value(self.t))
+            
+            
             # Note: remember that the critic's total_error value is what you
             # created to compute the Bellman error in a batch, 
             # and the critic's train function performs a gradient step 

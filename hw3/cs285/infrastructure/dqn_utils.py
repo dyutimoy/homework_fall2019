@@ -67,7 +67,7 @@ def lander_model(obs, num_actions, scope, reuse=False):
         return out
 
 
-def atari_model(img_input, num_actions,):
+def atari_model(img_input_shape, num_actions,):
     """
     with tf.variable_scope(scope, reuse=reuse):
         out = tf.cast(img_input, tf.float32) / 255.0
@@ -83,15 +83,16 @@ def atari_model(img_input, num_actions,):
 
         return out
     """
-    print(tf.shape(img_input)[1:])
+    
     atari_model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(32, (8,8),(4,4), activation='relu', input_shape=tf.shape(img_input)[1:]),
+            tf.keras.layers.Conv2D(32, (8,8),(4,4), activation='relu', input_shape=img_input_shape),
             tf.keras.layers.Conv2D(64, (4,4),2, activation='relu'),
             tf.keras.layers.Conv2D(64, (3,3),1, activation='relu'),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(512, activation='relu'),
             tf.keras.layers.Dense(num_actions, activation=None)
             ])
+            
     atari_model.summary()        
     return atari_model
 
