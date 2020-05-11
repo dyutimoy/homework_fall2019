@@ -277,7 +277,7 @@ def compute_exponential_averages(variables, decay):
     apply_op = averager.apply(variables)
     return [averager.average(v) for v in variables], apply_op
 
-@tf.function()
+
 def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
     """Minimized `objective` using `optimizer` w.r.t. variables in
     `var_list` while ensure the norm of the gradients for each
@@ -290,16 +290,12 @@ def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
             gradients[i] = (tf.clip_by_norm(grad, clip_val), var)
     return optimizer.apply_gradients(gradients)
     """
-    with tf.GradientTape() as tape:
-        loss =objective
-    
-    var_val = var_list
     #print(var_val)
     print(loss)
     grads = tape.gradient(loss, var_val)
     print(grads)
     #processed_grads=[tf.clip_by_norm(g, clip_val) for g in grads]        
-    return optimizer.apply_gradients(zip(grads,var_val))
+    optimizer.apply_gradients(zip(grads,var_val))
 
 def initialize_interdependent_variables(session, vars_list, feed_dict):
     """Initialize a list of variables one at a time, which is useful if
