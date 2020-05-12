@@ -26,6 +26,7 @@ class DQNCritic(BaseCritic):
         self.q_func=hparams['q_func']
         self.q_t_values_model=None
         self.target_q_func_model=None
+        self.clip_val=hparams['grad_norm_clipping']
         #self.optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, epsilon=1e-04)
         #self.define_placeholders()
         #self._build(hparams['q_func'])
@@ -120,9 +121,9 @@ class DQNCritic(BaseCritic):
         # train_fn will be called in order to train the critic (by minimizing the TD error)
         self.learning_rate = lr
         #minimize_and_clip(optimizer, gradients, clip_val=self.grad_norm_clipping)
-        #processed_grads=[tf.clip_by_norm(g, clip_val) for g in grads]  
+        processed_grads=[tf.clip_by_global_norm(g, self.clip_val) for g in gradients]  
         optimizer = self.optimizer_spec.constructor(learning_rate=self.learning_rate, **self.optimizer_spec.kwargs)      
-        optimizer.apply_gradients(zip(gradients,self.q_t_values_model.trainable_variables))
+        optimizer.apply_gradients(zip(processed_grads,self.q_t_values_model.trainable_variables))
 
         # update_target_fn will be called periodically to copy Q network to target Q network
 
