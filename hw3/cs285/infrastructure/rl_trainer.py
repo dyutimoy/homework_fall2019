@@ -172,7 +172,7 @@ class RL_Trainer(object):
                 if self.params['save_params'] and itr>self.params['agent_params']['learning_starts'] :
                     print('\nSaving agent\'s critic..********************************')
                     #self.agent.actor.save(self.params['logdir'] + '/policy_itr_'+str(itr))
-                    self.agent.critic.save(self.params['logdir'] + '/critic_itr_'+str(itr)+''.ckpt')
+                    self.agent.critic.save(self.params['logdir'] + '/ckt/critic_itr_'+str(itr))
 
     ####################################
     ####################################
