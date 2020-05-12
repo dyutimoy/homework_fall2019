@@ -157,7 +157,7 @@ class RL_Trainer(object):
             # train agent (using sampled data from replay buffer)
             loss = self.train_agent()
             #print(itr)
-            print(loss)
+            #print(loss)
             # log/save
             if self.logvideo or self.logmetrics:
                 # perform logging
@@ -169,10 +169,10 @@ class RL_Trainer(object):
 
 
                 # save policy
-                if self.params['save_params']:
-                    print('\nSaving agent\'s actor...')
-                    self.agent.actor.save(self.params['logdir'] + '/policy_itr_'+str(itr))
-                    self.agent.critic.save(self.params['logdir'] + '/critic_itr_'+str(itr))
+                if self.params['save_params'] and itr>self.params['agent_params']['learning_starts'] :
+                    print('\nSaving agent\'s critic..********************************')
+                    #self.agent.actor.save(self.params['logdir'] + '/policy_itr_'+str(itr))
+                    self.agent.critic.save(self.params['logdir'] + '/critic_itr_'+str(itr)+''.ckpt')
 
     ####################################
     ####################################

@@ -33,14 +33,15 @@ class DQNCritic(BaseCritic):
 
     def build_model(self,obs):
         input_shape=tf.shape(obs)[1:]
-        tf.print(input_shape)
+        #tf.print(input_shape)
         
         if self.q_t_values_model is None:
                 self.q_t_values_model= self.q_func(input_shape, self.ac_dim)
         if self.target_q_func_model is None:
                 self.target_q_func_model=self.q_func(input_shape, self.ac_dim)  
 
-
+    def save(self,path):
+        self.q_t_values_model.save_weights(path)
     
     def build_q_t_val(self,obs):
         self.obs_t_ph=tf.convert_to_tensor(obs)
@@ -67,10 +68,10 @@ class DQNCritic(BaseCritic):
                 #pass
             self.q_t_values =self.q_t_values_model(self.obs_t_ph)
             #self.q_t_values=tf.Variable(self.q_t_values)
-            tf.print(self.q_t_values)
+            #tf.print(self.q_t_values)
             self.q_t = tf.reduce_sum(self.q_t_values * tf.one_hot(self.act_t_ph, self.ac_dim), axis=1)
             #self.q_t=tf.Variable(self.q_t)
-            tf.print(self.q_t)
+            #tf.print(self.q_t)
             #####################
 
             # target q values, created with the placeholder that holds NEXT obs (i.e., t+1)
@@ -121,7 +122,7 @@ class DQNCritic(BaseCritic):
         # train_fn will be called in order to train the critic (by minimizing the TD error)
         self.learning_rate = lr
         #minimize_and_clip(optimizer, gradients, clip_val=self.grad_norm_clipping)
-        processed_grads=[tf.clip_by_global_norm(g, self.clip_val) for g in gradients]  
+        processed_grads,_=tf.clip_by_global_norm(gradients, self.clip_val)
         optimizer = self.optimizer_spec.constructor(learning_rate=self.learning_rate, **self.optimizer_spec.kwargs)      
         optimizer.apply_gradients(zip(processed_grads,self.q_t_values_model.trainable_variables))
 

@@ -47,7 +47,7 @@ class DQNAgent(object):
 
             Note that self.last_obs must always point to the new latest observation.
         """
-        print("\n step")
+        #print("\n step")
 
         # TODO store the latest observation into the replay buffer
         # HINT: see replay buffer's function store_frame
@@ -61,7 +61,7 @@ class DQNAgent(object):
         rv =np.random.random()
         perform_random_action = (rv<eps) or (self.t <self.learning_starts)
 
-        print(perform_random_action)
+        #print(perform_random_action)
         if perform_random_action:
             action = self.env.action_space.sample()
         else:
@@ -78,7 +78,7 @@ class DQNAgent(object):
             enc_last_obs = enc_last_obs[None, :]
 
             # TODO query the policy with enc_last_obs to select action
-            print("build q")
+            #print("build q")
             self.actor.critic.build_q_t_val(enc_last_obs)
             action = self.actor.get_action(enc_last_obs)
             action = action[0]
@@ -114,8 +114,8 @@ class DQNAgent(object):
 
         loss = 0.0
         #print(self.replay_buffer.can_sample(self.batch_size))
-        print("\nself t")
-        print(self.t)
+        print("\nself t ",self.t)
+        
         if (self.t > self.learning_starts and \
                 self.t % self.learning_freq == 0 and \
                 self.replay_buffer.can_sample(self.batch_size)):

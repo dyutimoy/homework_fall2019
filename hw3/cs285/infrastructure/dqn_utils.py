@@ -15,10 +15,10 @@ OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs", "lr_schedu
 def get_env_kwargs(env_name):
     if env_name == 'PongNoFrameskip-v4':
         kwargs = {
-            'learning_starts': 500,
+            'learning_starts': 50000,
             'target_update_freq': 10000,
             'replay_buffer_size': int(1e6),
-            'num_timesteps': int(2e8),
+            'num_timesteps': int(3e8),
             'q_func': atari_model,
             'learning_freq': 4,
             'grad_norm_clipping': 10,
