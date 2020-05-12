@@ -24,36 +24,28 @@ class DQNCritic(BaseCritic):
         self.num_timesteps=hparams['num_timesteps']
         self.optimizer_spec = optimizer_spec
         self.q_func=hparams['q_func']
-        self.q_t_values_model=None
+        self.q_t_values_model= self.q_func(self.input_shape, self.ac_dim)
+        self.target_q_func_model=self.q_func(self.input_shape, self.ac_dim)
         self.target_q_func_model=None
         self.clip_val=hparams['grad_norm_clipping']
         #self.optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, epsilon=1e-04)
         #self.define_placeholders()
         #self._build(hparams['q_func'])
-
-    def build_model(self,obs):
-        input_shape=tf.shape(obs)[1:]
-        #tf.print(input_shape)
-        
-        if self.q_t_values_model is None:
-                self.q_t_values_model= self.q_func(input_shape, self.ac_dim)
-        if self.target_q_func_model is None:
-                self.target_q_func_model=self.q_func(input_shape, self.ac_dim)  
+ 
 
     def save(self,path):
         self.q_t_values_model.save_weights(path)
     
     def build_q_t_val(self,obs):
-        self.obs_t_ph=tf.convert_to_tensor(obs)
-        if self.q_t_values_model is None:
-          self.q_t_values_model= self.q_func(self.obs_t_ph, self.ac_dim)
+         
+        self.obs_t_ph=tf.cast(obs,tf.float32)/255.0
         self.q_t_values =self.q_t_values_model(self.obs_t_ph)
 
     
     def train_one_step(self,ob_no, ac_na, re_n, next_ob_no, terminal_n,lr):
 
         #####################
-        self.obs_t_ph=tf.convert_to_tensor(ob_no)
+        self.obs_t_ph=tf.cast(ob_no,tf.float32)/255.0
         self.act_t_ph=tf.convert_to_tensor(ac_na)
         self.rew_t_ph=tf.convert_to_tensor(re_n)
         self.obs_tp1_ph=tf.convert_to_tensor(next_ob_no)

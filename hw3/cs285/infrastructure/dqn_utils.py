@@ -15,7 +15,7 @@ OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs", "lr_schedu
 def get_env_kwargs(env_name):
     if env_name == 'PongNoFrameskip-v4':
         kwargs = {
-            'learning_starts': 50000,
+            'learning_starts': 500,
             'target_update_freq': 10000,
             'replay_buffer_size': int(1e6),
             'num_timesteps': int(3e8),
@@ -56,7 +56,8 @@ def get_env_kwargs(env_name):
     return kwargs
 
 
-def lander_model(obs, num_actions, scope, reuse=False):
+def lander_model(obs, num_actions):
+    """
     with tf.variable_scope(scope, reuse=reuse):
         out = obs
         with tf.variable_scope("action_value"):
@@ -65,6 +66,15 @@ def lander_model(obs, num_actions, scope, reuse=False):
             out = layers.fully_connected(out, num_outputs=num_actions, activation_fn=None)
 
         return out
+    """
+     lander_model = tf.keras.models.Sequential([
+            tf.keras.layers.Dense(64, activation='relu',input_shape=img_input_shape),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dense(num_actions, activation=None)
+            ])
+            
+    lander_model.summary()        
+    return lander_model        
 
 
 def atari_model(img_input_shape, num_actions,):
