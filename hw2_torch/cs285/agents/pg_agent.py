@@ -6,12 +6,12 @@ from cs285.infrastructure.replay_buffer import ReplayBuffer
 from cs285.infrastructure.utils import *
 
 class PGAgent(BaseAgent):
-    def __init__(self, sess, env, agent_params):
+    def __init__(self, env, agent_params):
         super(PGAgent, self).__init__()
 
         # init vars
         self.env = env 
-        self.sess = sess
+        
         self.agent_params = agent_params
         self.gamma = self.agent_params['gamma']
         self.standardize_advantages = self.agent_params['standardize_advantages']

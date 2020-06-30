@@ -36,27 +36,31 @@ class MLPPolicyPG(object):
         self.nn_baseline = nn_baseline
 
 
-        self.pgpolicy=self.PGpolicy(self.ac_dim,self.ob_dim,self.n_layers,self.size)
-        self.nnpolicy=self.PGpolicy(1,self.ob_dim,self.n_layers,self.size)
-        self.optimizer= optim.Adam(pgpolicy.parameters,lr= self.learning_rate)
-    class PGPolicy(nn.Module):
+        self.pgpolicy=self.PGpolicy(self.ob_dim,self.ac_dim,self.n_layers,self.size)
+        self.nnpolicy=self.PGpolicy(self.ob_dim,1,self.n_layers,self.size)
+        self.optimizer= optim.Adam(self.pgpolicy.parameters(),lr= self.learning_rate)
+        self.nnoptimizer= optim.Adam(self.nnpolicy.parameters(),lr= self.learning_rate)
+
+    class PGpolicy(nn.Module):
 
         def __init__(self,in_fea, out_fea,n_layer,hidden_size,act=nn.ReLU):
-            super(Net,self).__init__()
+            super().__init__()
 
 
             self.act=act()
 
             self.fci = nn.Linear(in_fea,hidden_size)
-            self.fcs = nn.ModuleLists([nn.Linear(hidden_size,hidden_size) for i in range(n_layer)])
+            self.fcs = nn.ModuleList([nn.Linear(hidden_size,hidden_size) for i in range(n_layer)])
             self.fco = nn.Linear(hidden_size,out_fea)
 
         def  forward(self,x):
+            x = Variable(torch.from_numpy(x).type(torch.FloatTensor))
             x =self.act(self.fci(x))
             for l in self.fcs:  
                 x=F.relu(l(x))
 
-            x=self.fco(x)
+            x=F.softmax(self.fco(x))
+            
             return x
 
 
@@ -98,10 +102,11 @@ class MLPPolicyPG(object):
         self.baseline_prediction = self.nnpolicy(self.obs_batch)
 
     def get_action(self,obs):
+        self.obs_batch=obs
         self.policy_forward_pass()
         self.action_sampling()
 
-        return self.sample_ac
+        return self.sample_ac.numpy()
 
 
     def train_op(self):
@@ -110,18 +115,18 @@ class MLPPolicyPG(object):
 
 
         self.loss= - self.logprob_n*self.adv_n
-        optimizer.zero_grad() 
+        sel.optimizer.zero_grad() 
         self.loss.backward()
         self.optimizer.step()
 
         if self.nn_baseline:
-            optimizer.zero_grad() 
+            sel.optimizer.zero_grad() 
             self.baseline_forward_pass()
             criterion= nn.MSELoss()
             self.baseline_loss = criterion(self.targets_nn,self.baseline_prediction)
 
             self.baseline_loss.backward()
-            self.optimizer.step()
+            self.nnoptimizer.step()
 
     def update(self,obs,acs,adv_n=None,qvals=None):
         self.obs_batch=obs
