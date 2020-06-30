@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 import gym
 import os
-import pybullet,pybullet_envs
+#import pybullet,pybullet_envs
 import torch
 from cs285.infrastructure.utils import *
 from cs285.infrastructure.logger import Logger
@@ -22,7 +22,7 @@ class RL_Trainer(object):
         self.params = params
         self.logger = Logger(self.params['logdir'])  #TODO LOGGER 
 
-        seed = self.params['seeds']
+        seed = self.params['seed']
         np.random.seed(seed)
 
 
@@ -30,7 +30,7 @@ class RL_Trainer(object):
 
         self.env = gym.make(self.params['env_name'])
         self.env.seed(seed)
-
+        print("env", self.env)
 
         #max length of episodes
         self.params['ep_len'] = self.params['ep_len'] or self.env.spec.max_episode_steps
@@ -47,8 +47,8 @@ class RL_Trainer(object):
         self.params['agent_params']['ob_dim']= ob_dim
 
         #video save
-        if 'model' in dir(self.env):
-            self.fps = 1/self.env.model.opt.timestep  #what is model
+        if 'model' in dir(self.env.env):
+            self.fps = 1/self.env.env.model.opt.timestep  #what is model
         #else mostly I guess
         else:
             self.fps = self.env.env.metada['video.frames_per_second']    
@@ -86,7 +86,7 @@ class RL_Trainer(object):
 
             self.train_agent()
 
-    def collect_training_trajectories(self,itr,collect_policy, batch_size);
+    def collect_training_trajectories(self,itr,collect_policy, batch_size):
         print("\nCollecting data to be used for training...")
         paths, envsteps_this_batch = sample_trajectories(self.env,collect_policy,batch_size*self.params['ep_len'],self.params['ep_len'])
 
@@ -98,10 +98,10 @@ class RL_Trainer(object):
 
         return paths, envsteps_this_batch, train_video_steps
     
-    def train_agent(self);
+    def train_agent(self):
 
         print('\nTraining agent using sampled data from replay buffer...')
-        for train_step in range(self.params['num_agent_train_steps_per_iter'])
+        for train_step in range(self.params['num_agent_train_steps_per_iter']):
 
             ob_batch,ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(self.params['train_batch_size'])
             print("obs shape:{0}".format(ob_batch.shape))

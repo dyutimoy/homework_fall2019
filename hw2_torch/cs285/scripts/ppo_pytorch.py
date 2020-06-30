@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 import sys
-sys.path.append('/content/homework_fall2019/hw2')
+sys.path.append('/content/homework_fall2019/hw2_torch')
 from cs285.infrastructure.rl_trainertorch import RL_Trainer
 from cs285.agents.pg_agent import PGAgent
 

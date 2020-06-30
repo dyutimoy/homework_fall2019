@@ -104,7 +104,7 @@ class MLPPolicyPG(object):
         return self.sample_ac
 
 
-    def train_op(self)
+    def train_op(self):
 
         self.define_log_prob()
 
