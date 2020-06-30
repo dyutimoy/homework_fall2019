@@ -124,14 +124,14 @@ class MLPPolicyPG(object):
         self.define_log_prob()
 
 
-        self.loss= - self.logprob_n*self.adv_n
+        self.loss= -torch.matmul(self.logprob_n,self.adv_n)
         print("loss", self.adv_n.size(),self.logprob_n.size(),self.loss.size())
         self.optimizer.zero_grad() 
         self.loss.backward()
         self.optimizer.step()
 
         if self.nn_baseline:
-            sel.optimizer.zero_grad() 
+            self.optimizer.zero_grad() 
             self.baseline_forward_pass()
             criterion= nn.MSELoss()
             self.baseline_loss = criterion(self.targets_nn,self.baseline_prediction)

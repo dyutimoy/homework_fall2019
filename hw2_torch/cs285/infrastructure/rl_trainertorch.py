@@ -110,7 +110,7 @@ class RL_Trainer(object):
             self.agent.train(ob_batch,ac_batch,re_batch, next_ob_batch, terminal_batch) 
 
             if train_step % 100 == 0:
-                print('\n Print loss for train steps:{0} is {1}'.format(train_step,self.agent.actor.loss_val)) 
+                print('\n Print loss for train steps:{0} is {1}'.format(train_step,self.agent.actor.loss)) 
 
     def perform_logging(self, itr, paths, eval_policy, train_video_paths):
 
