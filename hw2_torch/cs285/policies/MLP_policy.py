@@ -91,12 +91,15 @@ class MLPPolicyPG(object):
             m = Categorical(logits_na)
             action=m.sample()
             self.logprob_n = m.log_prob(action)
+            self.logprob_n =self.logprob_n.unsqueeze(0)
 
         else:
             mean,std = self.parameters
             mvn = MultivariateNormal(loc,scale_tril = torch.diag(std))
             action = mvn.sample()
             self.logprob_n = mvn.log_prob(action)
+            self.logprob_n =self.logprob_n.unsqueeze(0)
+            
 
     def baseline_forward_pass(self):
         self.baseline_prediction = self.nnpolicy(self.obs_batch)
@@ -108,6 +111,13 @@ class MLPPolicyPG(object):
 
         return self.sample_ac.numpy()
 
+    def run_baseline_prediction(self,obs):
+
+        self.obs_batch=obs
+        self.baseline_forward_pass()
+        
+
+        return self.baseline_prediction.detach().numpy()  
 
     def train_op(self):
 
@@ -115,7 +125,8 @@ class MLPPolicyPG(object):
 
 
         self.loss= - self.logprob_n*self.adv_n
-        sel.optimizer.zero_grad() 
+        print("loss", self.adv_n.size(),self.logprob_n.size(),self.loss.size())
+        self.optimizer.zero_grad() 
         self.loss.backward()
         self.optimizer.step()
 
@@ -131,10 +142,10 @@ class MLPPolicyPG(object):
     def update(self,obs,acs,adv_n=None,qvals=None):
         self.obs_batch=obs
         self.action=acs
-        self.adv_n=adv_n
+        self.adv_n=torch.from_numpy(acs).type(torch.FloatTensor)
         self.qvals=qvals
         if self.nn_baseline:
-            self.targets_nn = (qvals - np.mean(qvals)/(np.std(qvals)+1e-8))
+            self.targets_nn = torch.from_numpy((qvals - np.mean(qvals)/(np.std(qvals)+1e-8))).type(torch.FloatTensor)
 
 
         self.train_op()

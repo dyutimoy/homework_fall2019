@@ -79,7 +79,7 @@ class RL_Trainer(object):
 
 
             training_returns = self.collect_training_trajectories(itr,collect_policy,self.params['batch_size'])
-            paths, envsteps_this_batch, train_video_paths = training_paths
+            paths, envsteps_this_batch, train_video_paths = training_returns
             self.total_envsteps +=envsteps_this_batch
 
             self.agent.add_to_replay_buffer(paths)
@@ -96,7 +96,7 @@ class RL_Trainer(object):
             ## TODO look in utils and implement sample_n_trajectories
             train_video_paths = sample_n_trajectories(self.env, collect_policy, MAX_NVIDEO, MAX_VIDEO_LEN, True)
 
-        return paths, envsteps_this_batch, train_video_steps
+        return paths, envsteps_this_batch, train_video_paths
     
     def train_agent(self):
 
