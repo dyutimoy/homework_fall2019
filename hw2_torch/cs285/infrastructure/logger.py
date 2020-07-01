@@ -29,8 +29,8 @@ class Logger:
     def log_paths_as_videos(self, paths, step, max_videos_to_save=2, fps=10, video_title='video'):
 
         # reshape the rollouts
-        for p in paths:
-          print(p['image_obs'])
+        #for p in paths:
+        #  print(p['image_obs'])
           
         videos = [np.transpose(p['image_obs'], [0, 3, 1, 2]) for p in paths]
 

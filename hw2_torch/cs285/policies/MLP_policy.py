@@ -37,10 +37,11 @@ class MLPPolicyPG(object):
 
 
         self.pgpolicy=self.PGpolicy(self.ob_dim,self.ac_dim,self.n_layers,self.size)
-        self.nnpolicy=self.PGpolicy(self.ob_dim,1,self.n_layers,self.size)
+        self.nnpolicy=self.NNpolicy(self.ob_dim,1,self.n_layers,self.size)
         self.optimizer= optim.Adam(self.pgpolicy.parameters(),lr= self.learning_rate)
         self.nnoptimizer= optim.Adam(self.nnpolicy.parameters(),lr= self.learning_rate)
-
+        print(self.pgpolicy)
+        print(self.nnpolicy)
     class PGpolicy(nn.Module):
 
         def __init__(self,in_fea, out_fea,n_layer,hidden_size,act=nn.ReLU):
@@ -60,6 +61,28 @@ class MLPPolicyPG(object):
                 x=F.relu(l(x))
 
             x=F.softmax(self.fco(x))
+            
+            return x
+
+    class NNpolicy(nn.Module):
+
+        def __init__(self,in_fea, out_fea,n_layer,hidden_size,act=nn.ReLU):
+            super().__init__()
+
+
+            self.act=act()
+
+            self.fci = nn.Linear(in_fea,hidden_size)
+            self.fcs = nn.ModuleList([nn.Linear(hidden_size,hidden_size) for i in range(n_layer)])
+            self.fco = nn.Linear(hidden_size,out_fea)
+
+        def  forward(self,x):
+            x = Variable(torch.from_numpy(x).type(torch.FloatTensor))
+            x =self.act(self.fci(x))
+            for l in self.fcs:  
+                x=F.relu(l(x))
+
+            x=self.fco(x)
             
             return x
 
@@ -123,8 +146,14 @@ class MLPPolicyPG(object):
 
         self.define_log_prob()
 
-
+        debug = 0
+        if debug:
+            print("logprob", self.logprob_n.grad,self.adv_n.requires_grad )
+            print(self.logprob_n)
+            print(self.adv_n)
         self.loss= -torch.matmul(self.logprob_n,self.adv_n)
+        #print(self.loss,self.loss.grad_fn)
+
         print("loss", self.adv_n.size(),self.logprob_n.size(),self.loss.size())
         self.optimizer.zero_grad() 
         self.loss.backward()
@@ -142,7 +171,7 @@ class MLPPolicyPG(object):
     def update(self,obs,acs,adv_n=None,qvals=None):
         self.obs_batch=obs
         self.action=acs
-        self.adv_n=torch.from_numpy(acs).type(torch.FloatTensor)
+        self.adv_n=torch.from_numpy(adv_n).type(torch.FloatTensor)
         self.qvals=qvals
         if self.nn_baseline:
             self.targets_nn = torch.from_numpy((qvals - np.mean(qvals)/(np.std(qvals)+1e-8))).type(torch.FloatTensor)

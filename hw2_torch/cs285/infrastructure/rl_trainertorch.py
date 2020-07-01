@@ -86,6 +86,28 @@ class RL_Trainer(object):
 
             self.train_agent()
 
+            if self.log_video or self.log_metrics:
+                # perform logging
+                print('\nBeginning logging procedure...')
+                self.perform_logging(itr, paths, eval_policy, train_video_paths)
+
+                if self.params['save_params']:
+                    torch.save({'epoch': itr,
+                                'model_state_dict': self.agent.actor.pgpolicy.state_dict(),
+                                'optimizer_state_dict': self.agent.actor.optimizer.state_dict(),
+                                'loss': self.agent.actor.loss
+                              
+                                }, self.params['logdir'] + '/policy_itr_'+str(itr))
+                    torch.save({'epoch': itr,
+                                    'model_state_dict': self.agent.actor.nnpolicy.state_dict(),
+                                    'optimizer_state_dict': self.agent.actor.nnoptimizer.state_dict(),
+                                    'loss': self.agent.actor.baseline_loss
+                                  
+                                    }, self.params['logdir'] + '/nnpolicy_itr_'+str(itr))
+
+
+
+
     def collect_training_trajectories(self,itr,collect_policy, batch_size):
         print("\nCollecting data to be used for training...")
         paths, envsteps_this_batch = sample_trajectories(self.env,collect_policy,batch_size*self.params['ep_len'],self.params['ep_len'])

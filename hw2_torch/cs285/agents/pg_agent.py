@@ -119,18 +119,24 @@ class PGAgent(BaseAgent):
         # HINT1: pass obs into the neural network that you're using to learn the baseline
             # extra hint if you're stuck: see your actor's run_baseline_prediction
         # HINT2: advantage should be [Q-b]
+        #print(q_values[0])
+        q_new=q_values.reshape(q_values.shape[0],1)
+        #print(q_values[0])
         if self.nn_baseline:
             b_n_unnormalized = self.actor.run_baseline_prediction(obs)
-            b_n = b_n_unnormalized * np.std(q_values) + np.mean(q_values)
-            adv_n = q_values-b_n
+            b_n = b_n_unnormalized * np.std(q_new) + np.mean(q_new)
+            adv_n = q_new-b_n
+            #print("1**********",q_new.shape, b_n,adv_n.shape)
 
         # Else, just set the advantage to [Q]
         else:
-            adv_n = q_values.copy()
+            adv_n = q_new.copy()
 
         # Normalize the resulting advantages
         if self.standardize_advantages:
             adv_n = (adv_n - np.mean(adv_n)) / (np.std(adv_n) + 1e-8)
+        
+        #print("2",adv_n)
 
         return adv_n
 
