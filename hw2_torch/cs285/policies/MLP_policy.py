@@ -10,6 +10,52 @@ from torch.distributions import Categorical
 from torch.distributions import MultivariateNormal
 from torch.autograd import Variable
 
+class PGpolicy(nn.Module):
+
+        def __init__(self,in_fea, out_fea,n_layer,hidden_size,act=nn.ReLU):
+            super(PGpolicy,self).__init__()
+
+
+            self.act=act()
+
+            self.fci = nn.Linear(in_fea,hidden_size)
+            self.fcs = nn.ModuleList([nn.Linear(hidden_size,hidden_size) for i in range(n_layer)])
+            self.fco = nn.Linear(hidden_size,out_fea)
+
+        def  forward(self,x):
+            #x = Variable(torch.from_numpy(x).type(torch.FloatTensor))
+            x =self.act(self.fci(x))
+            for l in self.fcs:  
+                x=F.relu(l(x))
+
+            x=F.softmax(self.fco(x))
+            
+            return x
+
+class NNpolicy(nn.Module):
+
+    def __init__(self,in_fea, out_fea,n_layer,hidden_size,act=nn.ReLU):
+        super(NNpolicy,self).__init__()
+
+
+        self.act=act()
+
+        self.fci = nn.Linear(in_fea,hidden_size)
+        self.fcs = nn.ModuleList([nn.Linear(hidden_size,hidden_size) for i in range(n_layer)])
+        self.fco = nn.Linear(hidden_size,out_fea)
+
+    def  forward(self,x):
+        #x = Variable(torch.from_numpy(x).type(torch.FloatTensor))
+        x =self.act(self.fci(x))
+        for l in self.fcs:  
+            x=F.relu(l(x))
+
+        x=self.fco(x)
+        
+        return x
+
+
+
 class MLPPolicyPG(object):
 
     def __init__(self,
@@ -36,65 +82,24 @@ class MLPPolicyPG(object):
         self.nn_baseline = nn_baseline
 
 
-        self.pgpolicy=self.PGpolicy(self.ob_dim,self.ac_dim,self.n_layers,self.size)
-        self.nnpolicy=self.NNpolicy(self.ob_dim,1,self.n_layers,self.size)
+        self.pgpolicy=PGpolicy(self.ob_dim,self.ac_dim,self.n_layers,self.size)
+        self.nnpolicy=NNpolicy(self.ob_dim,1,self.n_layers,self.size)
+        self.pgpolicy.cuda()
+        self.nnpolicy.cuda()
         self.optimizer= optim.Adam(self.pgpolicy.parameters(),lr= self.learning_rate)
         self.nnoptimizer= optim.Adam(self.nnpolicy.parameters(),lr= self.learning_rate)
         print(self.pgpolicy)
         print(self.nnpolicy)
-    class PGpolicy(nn.Module):
-
-        def __init__(self,in_fea, out_fea,n_layer,hidden_size,act=nn.ReLU):
-            super().__init__()
-
-
-            self.act=act()
-
-            self.fci = nn.Linear(in_fea,hidden_size)
-            self.fcs = nn.ModuleList([nn.Linear(hidden_size,hidden_size) for i in range(n_layer)])
-            self.fco = nn.Linear(hidden_size,out_fea)
-
-        def  forward(self,x):
-            x = Variable(torch.from_numpy(x).type(torch.FloatTensor))
-            x =self.act(self.fci(x))
-            for l in self.fcs:  
-                x=F.relu(l(x))
-
-            x=F.softmax(self.fco(x))
-            
-            return x
-
-    class NNpolicy(nn.Module):
-
-        def __init__(self,in_fea, out_fea,n_layer,hidden_size,act=nn.ReLU):
-            super().__init__()
-
-
-            self.act=act()
-
-            self.fci = nn.Linear(in_fea,hidden_size)
-            self.fcs = nn.ModuleList([nn.Linear(hidden_size,hidden_size) for i in range(n_layer)])
-            self.fco = nn.Linear(hidden_size,out_fea)
-
-        def  forward(self,x):
-            x = Variable(torch.from_numpy(x).type(torch.FloatTensor))
-            x =self.act(self.fci(x))
-            for l in self.fcs:  
-                x=F.relu(l(x))
-
-            x=self.fco(x)
-            
-            return x
-
+    
 
 
 
     def policy_forward_pass(self):
         if self.discrete:
-            logits_na=self.pgpolicy(self.obs_batch)
+            logits_na=self.pgpolicy(self.obs_batch.cuda())
             self.parameters = logits_na
         else:
-            mean = self.pgpolicy(self.obs_batch)
+            mean = self.pgpolicy(self.obs_batch.cuda())
             std = torch.ones(self.ac_dim,dtype=torch.float)
             self.parameters = (mean,logstd)
 
@@ -112,8 +117,9 @@ class MLPPolicyPG(object):
         if self.discrete:
             logits_na = self.parameters
             m = Categorical(logits_na)
-            action=m.sample()
-            self.logprob_n = m.log_prob(action)
+            #action=m.sample()
+            self.logprob_n = m.log_prob(self.action)
+            self.logprob_n.cpu()
             self.logprob_n =self.logprob_n.unsqueeze(0)
 
         else:
@@ -125,22 +131,24 @@ class MLPPolicyPG(object):
             
 
     def baseline_forward_pass(self):
-        self.baseline_prediction = self.nnpolicy(self.obs_batch)
+        self.baseline_prediction = self.nnpolicy(self.obs_batch.cuda())
 
     def get_action(self,obs):
-        self.obs_batch=obs
+        self.obs_batch=Variable(torch.from_numpy(obs).type(torch.FloatTensor))
+        self.obs_batch.cuda()
         self.policy_forward_pass()
         self.action_sampling()
 
-        return self.sample_ac.numpy()
+        return self.sample_ac.cpu().numpy()
 
     def run_baseline_prediction(self,obs):
 
-        self.obs_batch=obs
+        self.obs_batch=Variable(torch.from_numpy(obs).type(torch.FloatTensor))
+        self.obs_batch.cuda()
         self.baseline_forward_pass()
         
 
-        return self.baseline_prediction.detach().numpy()  
+        return self.baseline_prediction.cpu().detach().numpy()  
 
     def train_op(self):
 
@@ -169,8 +177,8 @@ class MLPPolicyPG(object):
             self.nnoptimizer.step()
 
     def update(self,obs,acs,adv_n=None,qvals=None):
-        self.obs_batch=obs
-        self.action=acs
+        self.obs_batch=Variable(torch.from_numpy(obs).type(torch.FloatTensor))
+        self.action=Variable(torch.from_numpy(acs).type(torch.FloatTensor))
         self.adv_n=torch.from_numpy(adv_n).type(torch.FloatTensor)
         self.qvals=qvals
         if self.nn_baseline:
