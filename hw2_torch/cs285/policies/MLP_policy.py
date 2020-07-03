@@ -117,16 +117,19 @@ class MLPPolicyPG(object):
         if self.discrete:
             logits_na = self.parameters
             m = Categorical(logits_na)
-            #action=m.sample()
-            self.logprob_n = m.log_prob(self.action)
-            self.logprob_n.cpu()
+            
+            self.action=self.action.squeeze(-1)
+            self.logprob_n = m.log_prob(self.action.cuda())
+            print("log",self.logprob_n.size())
             self.logprob_n =self.logprob_n.unsqueeze(0)
 
         else:
             mean,std = self.parameters
-            mvn = MultivariateNormal(loc,scale_tril = torch.diag(std))
-            action = mvn.sample()
-            self.logprob_n = mvn.log_prob(action)
+            mvn = MultivariateNormal(loc=mean,scale_tril = torch.diag(std))
+            #action = mvn.sample()
+            self.action=self.action.squeeze(-1)
+            self.logprob_n = m.log_prob(self.action.cuda())
+            
             self.logprob_n =self.logprob_n.unsqueeze(0)
             
 
@@ -159,7 +162,7 @@ class MLPPolicyPG(object):
             print("logprob", self.logprob_n.grad,self.adv_n.requires_grad )
             print(self.logprob_n)
             print(self.adv_n)
-        self.loss= -torch.matmul(self.logprob_n,self.adv_n)
+        self.loss= -torch.matmul(self.logprob_n,self.adv_n.cuda())
         #print(self.loss,self.loss.grad_fn)
 
         print("loss", self.adv_n.size(),self.logprob_n.size(),self.loss.size())
@@ -171,7 +174,8 @@ class MLPPolicyPG(object):
             self.optimizer.zero_grad() 
             self.baseline_forward_pass()
             criterion= nn.MSELoss()
-            self.baseline_loss = criterion(self.targets_nn,self.baseline_prediction)
+            criterion.cuda()
+            self.baseline_loss = criterion(self.targets_nn.cuda(),self.baseline_prediction.cuda())
 
             self.baseline_loss.backward()
             self.nnoptimizer.step()
